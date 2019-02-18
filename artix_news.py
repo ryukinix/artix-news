@@ -47,7 +47,6 @@ class ArtixNewsParser(p.HTMLParser):
                 break
         return value
 
-
     def colorize(self, keyword, color):
         new = keyword
         if color == 'green':
@@ -188,7 +187,7 @@ class ArtixNewsParser(p.HTMLParser):
     def run(cls):
         url = "https://artixlinux.org/news.php"
         headers = {
-            'user-agent': "Chrome/72.0.3626.109"
+            'user-agent': "Artix News"
         }
 
         req = r.Request(url, headers=headers)
