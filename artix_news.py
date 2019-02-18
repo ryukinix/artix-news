@@ -73,8 +73,8 @@ class ArtixNewsParser(p.HTMLParser):
         if self._ignore:
             return
 
-        if  tag == 'a':
-            self._append('<')
+        if tag == 'a':
+            self._append(' ')
         elif tag == 'br':
             self._append('\n')
         elif tag == 'code':
@@ -101,7 +101,7 @@ class ArtixNewsParser(p.HTMLParser):
         if tag in ['p', 'div']:
             self._append('\n\n')
         elif tag == 'a':
-            self._append('>')
+            self._append(' ')
         elif tag in ['li', 'ul', 'ol', 'code']:
             self._append('\n')
         elif tag == 'pre':
@@ -109,22 +109,34 @@ class ArtixNewsParser(p.HTMLParser):
             self._append('\n')
 
     def handle_data(self, data):
+        tag, attrs = '', []
+        tag_parent, attrs_parent = tag, attrs
         if self._stack:
             tag, attrs = self._stack[-1]
-        else:
-            tag = ''
 
-        data = data.lstrip()
+        if len(self._stack) >= 2:
+            tag_parent, attrs_parent = self._stack[-2]
 
-        if self._ignore or tag == 'h0':
+        data = data.lstrip()  # cleansing
+
+        if self._ignore or tag == 'h0': # ignore first heading
             return
 
-        # if tag == 'p' and len(self._stack) >= 2:
-        #     _, attrs_parent = self._stack[-2]
-        #     if self._get_attr(attrs_parent, 'class') == 'news':
-        #         self._append_raw('\n[News] ' + data)
+        if tag == 'p' and tag_parent == 'div':
+            memory = self._get_attr(attrs_parent, 't')
+            cls = self._get_attr(attrs_parent, 'class')
+            if memory is None and cls == 'news':
+                self._append_raw('\n[News] ' + data)
+                attrs_parent.append(('t', True))
+                return
 
-        elif self._inside_pre or tag == 'code':
+        if tag == 'a' and tag_parent == 'div':
+            cls = self._get_attr(attrs_parent, 'class')
+            if cls == 'timestamp':
+                self._append_raw('[Date] ' + data)
+                return
+
+        if self._inside_pre or tag == 'code':
             # Everything inside <pre> or in code is indented by three spaces.
             indented_data = '\n'.join(['\t'+line for line in data.split('\n')])
             self._append_raw(indented_data)
@@ -159,4 +171,7 @@ headers = {
 req = r.Request(url, headers=headers)
 res = r.urlopen(req)
 txt = res.read()
-print(ArtixNewsParser.unhtml(txt.decode('utf-8')))
+out = ArtixNewsParser.unhtml(txt.decode('utf-8'))
+out = out.replace('[News]', '\033[34m[News]\033[0m')
+out = out.replace('[Date]', '\033[32m[Date]\033[0m')
+print(out)
