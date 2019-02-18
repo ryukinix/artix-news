@@ -20,6 +20,11 @@ class ArtixNewsParser(p.HTMLParser):
     """Parser formats HTML into plain text, result is stored inside
     `out` property."""
 
+    GREEN = '\033[32m'
+    RED = '\033[33m'
+    BLUE = '\033[34m'
+    RESET = '\033[0m'
+
     def __init__(self):
         super().__init__()
 
@@ -42,6 +47,17 @@ class ArtixNewsParser(p.HTMLParser):
                 break
         return value
 
+
+    def colorize(self, keyword, color):
+        new = keyword
+        if color == 'green':
+            new = self.GREEN + keyword + self.RESET
+        elif color == 'blue':
+            new = self.BLUE + keyword + self.RESET
+        elif color == 'red':
+            new = self.RED + keyword + self.RESET
+        self.out = self.out.replace(keyword, new)
+
     def _append(self, text):
         if not text:
             return
@@ -63,7 +79,7 @@ class ArtixNewsParser(p.HTMLParser):
                 else:
                     self.out += text
         else:
-            self.out += text
+            self.out += ' ' + text
 
     def _append_raw(self, text):
         self.out += text
@@ -126,14 +142,14 @@ class ArtixNewsParser(p.HTMLParser):
             memory = self._get_attr(attrs_parent, 't')
             cls = self._get_attr(attrs_parent, 'class')
             if memory is None and cls == 'news':
-                self._append_raw('\n[News] ' + data)
+                self._append('\n[News] ' + data)
                 attrs_parent.append(('t', True))
                 return
 
         if tag == 'a' and tag_parent == 'div':
             cls = self._get_attr(attrs_parent, 'class')
             if cls == 'timestamp':
-                self._append_raw('[Date] ' + data)
+                self._append('[Date] ' + data)
                 return
 
         if self._inside_pre or tag == 'code':
@@ -158,20 +174,31 @@ class ArtixNewsParser(p.HTMLParser):
         """Uses parser on given `text` and returns the result."""
         parser = cls()
         parser.feed(text)
-        return parser.out
+        return parser
+
+    def print(self):
+        print(self.out)
+
+    def fix_dates(self):
+        pattern = r'\s+(\[Date\]\s?)(.*)'
+        new = r" [{}\2{}]".format(self.GREEN, self.RESET)
+        self.out = re.sub(pattern, new, self.out)
+
+    @classmethod
+    def run(cls):
+        url = "https://artixlinux.org/news.php"
+        headers = {
+            'user-agent': "Chrome/72.0.3626.109"
+        }
+
+        req = r.Request(url, headers=headers)
+        res = r.urlopen(req)
+        txt = res.read()
+        p = ArtixNewsParser.unhtml(txt.decode('utf-8'))
+        p.fix_dates()
+        p.colorize('[News]', 'blue')
+        p.print()
 
 
-
-url = "https://artixlinux.org/news.php"
-headers = {
-    'user-agent': "Chrome/72.0.3626.109"
-}
-
-
-req = r.Request(url, headers=headers)
-res = r.urlopen(req)
-txt = res.read()
-out = ArtixNewsParser.unhtml(txt.decode('utf-8'))
-out = out.replace('[News]', '\033[34m[News]\033[0m')
-out = out.replace('[Date]', '\033[32m[Date]\033[0m')
-print(out)
+if __name__ == '__main__':
+    ArtixNewsParser.run()
