@@ -13,6 +13,7 @@
 import html.parser as p
 import urllib.request as r
 import re
+import argparse
 
 
 # Main config
@@ -175,8 +176,12 @@ class ArtixNewsParser(p.HTMLParser):
         parser.feed(text)
         return parser
 
-    def print(self):
-        print(self.out)
+    def print(self, summary=False):
+        if summary:
+            pattern = re.compile('.*\[News\].*')
+            print('\n'.join(pattern.findall(self.out)))
+        else:
+            print(self.out)
 
     def fix_dates(self):
         pattern = r'\s+(\[Date\]\s?)(.*)'
@@ -196,7 +201,11 @@ class ArtixNewsParser(p.HTMLParser):
         p = ArtixNewsParser.unhtml(txt.decode('utf-8'))
         p.fix_dates()
         p.colorize('[News]', 'blue')
-        p.print()
+
+        parser = argparse.ArgumentParser()
+        parser.add_argument('-s', '--summary', action='store_true', help='shows news summary')
+        args = parser.parse_args()
+        p.print(args.summary)
 
 
 if __name__ == '__main__':
