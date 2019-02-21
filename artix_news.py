@@ -69,12 +69,13 @@ class ArtixNewsParser(p.HTMLParser):
 
         if last_char.isspace():
             if text[0] in [' ', '\t']:
-                # Squeeze spaces, unless they are intended (intended are those in
-                # `text` variable).
+                # Squeeze spaces, unless they are intended (intended
+                # are those in `text` variable).
                 self.out = self.out.rstrip(' \t') + text
             else:
                 if last_char == text[0] == '\n':
-                    # This ensures that at most two consecutive new lines are added.
+                    # This ensures that at most two consecutive new
+                    # lines are added.
                     self.out = self.out.rstrip() + '\n\n' + text.lstrip('\n')
                 else:
                     self.out += text
@@ -89,6 +90,7 @@ class ArtixNewsParser(p.HTMLParser):
         if self._ignore:
             return
 
+        cls = self._get_attr(attrs, 'class')
         if tag == 'a':
             self._append(' ')
         elif tag == 'br':
@@ -97,7 +99,7 @@ class ArtixNewsParser(p.HTMLParser):
             self._append('\n\n')
         elif tag == 'pre':
             self._inside_pre = True
-        elif tag == 'div' and self._get_attr(attrs, 'class') in {'right', 'sidebar'}:
+        elif tag == 'div'and cls in {'right', 'sidebar'}:
             self._ignore = True
         elif tag == 'li':
             self._append(' \u2022 ')  # Bullet Unicode symbol.
@@ -108,7 +110,8 @@ class ArtixNewsParser(p.HTMLParser):
         if self._stack:
             _, attrs = self._stack.pop()
 
-        if tag == 'div' and self._get_attr(attrs, 'class') in {'right', 'sidebar'}:
+        cls = self._get_attr(attrs, 'class')
+        if tag == 'div' and cls in {'right', 'sidebar'}:
             self._ignore = False
 
         if self._ignore:
@@ -135,7 +138,7 @@ class ArtixNewsParser(p.HTMLParser):
 
         data = data.lstrip()  # cleansing
 
-        if self._ignore or tag == 'h0': # ignore first heading
+        if self._ignore or tag == 'h0':  # ignore first heading
             return
 
         if tag == 'p' and tag_parent == 'div':
@@ -178,7 +181,7 @@ class ArtixNewsParser(p.HTMLParser):
 
     def print(self, summary=False):
         if summary:
-            pattern = re.compile('.*\[News\].*')
+            pattern = re.compile(r'.*\[News\].*')
             print('\n'.join(pattern.findall(self.out)))
         else:
             print(self.out)
@@ -203,7 +206,9 @@ class ArtixNewsParser(p.HTMLParser):
         p.colorize('[News]', 'blue')
 
         parser = argparse.ArgumentParser()
-        parser.add_argument('-s', '--summary', action='store_true', help='shows news summary')
+        parser.add_argument('-s', '--summary',
+                            action='store_true',
+                            help='shows news summary')
         args = parser.parse_args()
         p.print(args.summary)
 
