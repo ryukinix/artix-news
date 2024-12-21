@@ -1,0 +1,34 @@
+[project]
+name = "artix-news"
+version = "0.3.0"
+description = "Artix News scraper"
+keywords = ["scraping artix news setuptools development"]
+readme = "README.md"
+authors = [
+    {name = "Manoel Vilela", email = "manoel_vilela@engineer.com"},
+]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3.5",
+    "Programming Language :: Python :: 3.6",
+    "Programming Language :: Python :: 3.7",
+    "Topic :: Software Development :: Build Tools",
+]
+requires-python = ">=3.5, <4"
+
+[project.urls]
+Homepage = "https://github.com/ryukinix/artix-news"
+Funding = "https://donate.lerax.me"
+Source = "https://github.com/ryukinix/artix-news/"
+
+[project.scripts]
+artix-news = "artix_news:ArtixNewsParser.run"
+
+[build-system]
+requires = ["pdm-backend"]
+build-backend = "pdm.backend"
+
+[tool.pdm.scripts]
+format = "ruff format artix_news.py"
