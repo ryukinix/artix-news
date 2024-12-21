@@ -29,7 +29,7 @@ class ArtixNewsParser(p.HTMLParser):
     def __init__(self):
         super().__init__()
 
-        self.out = ""
+        self.out: str = ""
         self._stack = []
         self._inside_pre = False
         self._ignore = False
@@ -130,15 +130,20 @@ class ArtixNewsParser(p.HTMLParser):
     def handle_data(self, data):
         tag, attrs = "", []
         tag_parent, attrs_parent = tag, attrs
+        tag_pparent, attrs_pparent = tag, attrs
+
         if self._stack:
             tag, attrs = self._stack[-1]
 
         if len(self._stack) >= 2:
             tag_parent, attrs_parent = self._stack[-2]
 
+        if len(self._stack) >= 3:
+            tag_pparent, attrs_pparent = self._stack[-3]
+
         data = data.lstrip()  # cleansing
 
-        if self._ignore or tag == "h0":  # ignore first heading
+        if self._ignore or (tag == "h0" or tag == "title"):  # ignore first heading
             return
 
         if tag == "p" and tag_parent == "div":
@@ -149,8 +154,8 @@ class ArtixNewsParser(p.HTMLParser):
                 attrs_parent.append(("t", True))
                 return
 
-        if tag == "a" and tag_parent == "div":
-            cls = self._get_attr(attrs_parent, "class")
+        if tag == "span" and tag_pparent == "div":
+            cls = self._get_attr(attrs_pparent, "class")
             if cls == "timestamp":
                 self._append("[Date] " + data)
                 return
@@ -186,6 +191,12 @@ class ArtixNewsParser(p.HTMLParser):
         else:
             print(self.out)
 
+    def fix_printing_order(self):
+        delimiter = "[News]"
+        news = [delimiter + n for n in self.out.split("[News]")
+                if n.strip() != ""]
+        self.out = "\n".join(reversed(news))
+
     def fix_dates(self):
         pattern = r"\s+(\[Date\]\s?)(.*)"
         new = r" [{}\2{}]".format(self.GREEN, self.RESET)
@@ -200,6 +211,7 @@ class ArtixNewsParser(p.HTMLParser):
         res = r.urlopen(req)
         txt = res.read()
         p = ArtixNewsParser.unhtml(txt.decode("utf-8"))
+        p.fix_printing_order()
         p.fix_dates()
         p.colorize("[News]", "blue")
 
