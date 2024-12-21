@@ -1,6 +1,6 @@
 [project]
 name = "artix-news"
-version = "0.2.0"
+version = "0.3.0"
 description = "Artix News scraper"
 keywords = ["scraping artix news setuptools development"]
 readme = "README.md"
